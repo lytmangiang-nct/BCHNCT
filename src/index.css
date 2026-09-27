@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: Arial, Roboto, 'Segoe UI', sans-serif;
+    background-color: #ffffff;
+    color: #111827;
+  }
+}
+
+/* Kiểu in ấn A4 dọc và tối đa lề cho bảng lịch */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 5mm;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Ẩn toàn bộ nút bấm, thanh điều khiển, menu dropdown, modal */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Chỉ hiển thị khu vực bảng in */
+  #printable-content,
+  #export-modal-document {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border: 1px solid #000000 !important;
+  }
+}
+
+/* Excel table styling helpers */
+.excel-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.excel-table th,
+.excel-table td {
+  border: 1px solid #94a3b8;
+  text-align: center;
+  vertical-align: middle;
+}
