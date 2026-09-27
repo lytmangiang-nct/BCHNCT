@@ -250,8 +250,8 @@ export const ExportPreviewModal: React.FC<Props> = ({
         </div>
 
         {/* Nội dung bản in/xuất */}
-        <div ref={contentRef} className="p-4 sm:p-6 overflow-y-auto bg-gray-100 flex justify-center">
-          <div className="w-full bg-white shadow-md border border-gray-300">
+        <div ref={contentRef} className="p-2 sm:p-6 overflow-y-auto overflow-x-auto bg-gray-100 flex justify-center">
+          <div className="w-[1120px] min-w-[1120px] bg-white shadow-md border border-gray-300">
             <PrintPreview
               week={week}
               bchList={bchList}

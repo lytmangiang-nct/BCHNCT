@@ -1383,11 +1383,12 @@ export default function App() {
         style={{
           position: 'fixed',
           top: 0,
-          left: 0,
+          left: '-99999px',
           width: '1120px',
           zIndex: -9999,
           pointerEvents: 'none',
-          opacity: 0,
+          opacity: 1,
+          visibility: 'visible',
         }}
       >
         <div style={{ width: '1120px', background: '#ffffff' }}>
