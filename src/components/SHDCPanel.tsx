@@ -21,6 +21,7 @@ interface Props {
   onOpenMondayDutyModal?: () => void;
   onToggleLockMondayDuty?: () => void;
   onApplyMondayDutyToNextWeek?: () => void;
+  showOnlySHDC?: boolean;
 }
 
 export const SHDCPanel: React.FC<Props> = ({
@@ -38,6 +39,7 @@ export const SHDCPanel: React.FC<Props> = ({
   onOpenMondayDutyModal,
   onToggleLockMondayDuty,
   onApplyMondayDutyToNextWeek,
+  showOnlySHDC = false,
 }) => {
   const [selectedMode, setSelectedMode] = useState<SHDCDistributionMode>(
     week.shdc?.mode || '3_per_location'
@@ -502,8 +504,8 @@ export const SHDCPanel: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Dòng tóm tắt Phân công lớp trực Thứ Hai, Trực tuần & Vệ sinh cầu thang */}
-          {(() => {
+          {/* Dòng tóm tắt Phân công lớp trực Thứ Hai & Vệ sinh cầu thang (chỉ hiển thị khi không ở chế độ phân hệ riêng biệt) */}
+          {!showOnlySHDC && (() => {
             const isDutyLocked = Boolean(week.mondayDutyClasses?.isLocked);
             const isFieldLocked = (fieldKey: string) =>
               isDutyLocked || Boolean(week.mondayDutyClasses?.lockedFields?.[fieldKey]);

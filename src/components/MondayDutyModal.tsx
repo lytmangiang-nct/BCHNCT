@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MondayDutyClasses, BCHUnit } from '../types';
 
 interface Props {
   dutyClasses?: MondayDutyClasses;
   bchList: BCHUnit[];
   weekNumber: number;
+  initialSection?: 'weeklyDuty' | 'stairs' | 'all';
   onSave: (
     duty: MondayDutyClasses,
     applyToNextWeek?: boolean,
@@ -135,6 +136,7 @@ export const MondayDutyModal: React.FC<Props> = ({
   dutyClasses,
   bchList,
   weekNumber,
+  initialSection = 'weeklyDuty',
   onSave,
   onClose,
 }) => {
@@ -148,7 +150,16 @@ export const MondayDutyModal: React.FC<Props> = ({
     a.localeCompare(b, undefined, { numeric: true })
   );
 
-  const [activeTab, setActiveTab] = useState<'all' | 'weekDuty' | 'stairs' | 'stage'>('all');
+  const [activeTab, setActiveTab] = useState<'weeklyDuty' | 'stairs' | 'all'>(
+    initialSection || 'weeklyDuty'
+  );
+
+  useEffect(() => {
+    if (initialSection) {
+      setActiveTab(initialSection);
+    }
+  }, [initialSection]);
+
   const [applyToNextWeek, setApplyToNextWeek] = useState<boolean>(true);
   const [applyToAllFuture, setApplyToAllFuture] = useState<boolean>(false);
 
@@ -455,10 +466,18 @@ export const MondayDutyModal: React.FC<Props> = ({
         {/* Header Modal */}
         <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white border-b border-blue-800 shrink-0">
           <div className="flex items-center gap-2.5">
-            <span className="text-2xl">🏛️</span>
+            <span className="text-2xl">
+              {activeTab === 'weeklyDuty' && '🏛️'}
+              {activeTab === 'stairs' && '🪜'}
+              {activeTab === 'all' && '📋'}
+            </span>
             <div>
               <h3 className="font-extrabold text-sm sm:text-base uppercase tracking-wide flex items-center gap-2">
-                <span>Phân Công Trực Theo Tuần & Vệ Sinh Cầu Thang (Tuần {weekNumber.toString().padStart(2, '0')})</span>
+                <span>
+                  {activeTab === 'weeklyDuty' && `Chỉnh Sửa Phân Công Trực Theo Tuần (Tuần ${weekNumber.toString().padStart(2, '0')})`}
+                  {activeTab === 'stairs' && `Chỉnh Sửa Phân Công Vệ Sinh Cầu Thang (Tuần ${weekNumber.toString().padStart(2, '0')})`}
+                  {activeTab === 'all' && `Chỉnh Sửa Tổng Hợp Các Phân Công (Tuần ${weekNumber.toString().padStart(2, '0')})`}
+                </span>
                 {isGloballyLocked ? (
                   <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">
                     🔒 ĐÃ KHÓA
@@ -474,7 +493,9 @@ export const MondayDutyModal: React.FC<Props> = ({
                 )}
               </h3>
               <p className="text-[11px] text-blue-200">
-                Trực cổng, Sân khấu, Trực tuần & Vệ sinh cầu thang Sáng - Chiều • Tự động giữ nguyên sang tuần tiếp theo
+                {activeTab === 'weeklyDuty' && 'Lớp trực tuần, Trực cổng, Chuẩn bị & Dọn dẹp sân khấu sáng & chiều Thứ Hai'}
+                {activeTab === 'stairs' && 'Phân công 5 khu vực cầu thang Khu A, Khu B, Khu C1, Khu D các ca Sáng & Chiều'}
+                {activeTab === 'all' && 'Trực cổng, Sân khấu, Trực tuần & Vệ sinh cầu thang Sáng - Chiều • Tự động giữ nguyên sang tuần tiếp theo'}
               </p>
             </div>
           </div>
@@ -495,7 +516,11 @@ export const MondayDutyModal: React.FC<Props> = ({
                 <span className="text-2xl">🔒</span>
                 <div>
                   <div className="font-black text-xs sm:text-sm text-emerald-950 uppercase flex items-center gap-2">
-                    <span>ĐÃ KHÓA PHÂN CÔNG LỚP TRỰC & VỆ SINH CẦU THANG</span>
+                    <span>
+                      {activeTab === 'weeklyDuty' && 'ĐÃ KHÓA PHÂN CÔNG TRỰC THEO TUẦN'}
+                      {activeTab === 'stairs' && 'ĐÃ KHÓA PHÂN CÔNG VỆ SINH CẦU THANG'}
+                      {activeTab === 'all' && 'ĐÃ KHÓA PHÂN CÔNG LỚP TRỰC & VỆ SINH CẦU THANG'}
+                    </span>
                     <span className="bg-emerald-700 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
                       Cố định
                     </span>
@@ -530,7 +555,7 @@ export const MondayDutyModal: React.FC<Props> = ({
                     )}
                   </div>
                   <p className="text-[11px] text-amber-800 font-medium mt-0.5">
-                    Bấm <strong>"Khóa phân công"</strong> để cố định tất cả lớp và <strong>giữ nguyên sang tuần tiếp theo</strong>.
+                    Bấm <strong>"Khóa toàn bộ"</strong> để cố định tất cả lớp và <strong>giữ nguyên sang tuần tiếp theo</strong>.
                   </p>
                 </div>
               </div>
@@ -551,50 +576,45 @@ export const MondayDutyModal: React.FC<Props> = ({
         {/* Thanh tác vụ nhanh & Lọc Tabs */}
         <div className="px-4 py-2 bg-slate-100 border-b border-gray-300 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
           {/* Tabs chuyển đổi góc nhìn */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-black uppercase text-gray-700 mr-0.5">
+              Nội dung sửa:
+            </span>
             <button
               type="button"
-              onClick={() => setActiveTab('all')}
-              className={`px-2.5 py-1 rounded-xs font-bold transition-colors cursor-pointer ${
-                activeTab === 'all'
-                  ? 'bg-blue-800 text-white shadow-2xs'
-                  : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-300'
+              onClick={() => setActiveTab('weeklyDuty')}
+              className={`px-3 py-1.5 rounded-xs font-black transition-all flex items-center gap-1 cursor-pointer ${
+                activeTab === 'weeklyDuty'
+                  ? 'bg-indigo-700 text-white shadow-2xs ring-1 ring-indigo-500'
+                  : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-300 font-bold'
               }`}
             >
-              📋 Tất cả
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('weekDuty')}
-              className={`px-2.5 py-1 rounded-xs font-bold transition-colors cursor-pointer ${
-                activeTab === 'weekDuty'
-                  ? 'bg-indigo-700 text-white shadow-2xs'
-                  : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-300'
-              }`}
-            >
-              📅 1. Trực tuần
+              <span>🏛️</span>
+              <span>1. Trực tuần, Cổng & Sân khấu</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('stairs')}
-              className={`px-2.5 py-1 rounded-xs font-bold transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xs font-black transition-all flex items-center gap-1 cursor-pointer ${
                 activeTab === 'stairs'
-                  ? 'bg-teal-700 text-white shadow-2xs'
-                  : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-300'
+                  ? 'bg-teal-700 text-white shadow-2xs ring-1 ring-teal-500'
+                  : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-300 font-bold'
               }`}
             >
-              🪜 2. Vệ sinh cầu thang
+              <span>🪜</span>
+              <span>2. Vệ sinh cầu thang</span>
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('stage')}
-              className={`px-2.5 py-1 rounded-xs font-bold transition-colors cursor-pointer ${
-                activeTab === 'stage'
-                  ? 'bg-amber-700 text-white shadow-2xs'
+              onClick={() => setActiveTab('all')}
+              className={`px-2.5 py-1.5 rounded-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                activeTab === 'all'
+                  ? 'bg-blue-900 text-white shadow-2xs ring-1 ring-blue-600'
                   : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-300'
               }`}
             >
-              🎪 3. Sân khấu & Cổng
+              <span>📋</span>
+              <span>Tất cả</span>
             </button>
           </div>
 
@@ -620,9 +640,9 @@ export const MondayDutyModal: React.FC<Props> = ({
               type="button"
               onClick={handleApplyStandardSample}
               className="px-2.5 py-1 text-xs font-black bg-emerald-700 hover:bg-emerald-800 text-white rounded-xs transition-colors shadow-2xs flex items-center gap-1 cursor-pointer"
-              title="Điền mẫu chuẩn theo yêu cầu: Trực tuần Sáng 11C4, Chiều 10C4; Cầu thang Sáng & Chiều..."
+              title="Điền mẫu chuẩn theo yêu cầu"
             >
-              <span>⚡</span> Mẫu chuẩn (11C4, 10C4)
+              <span>⚡</span> Mẫu chuẩn
             </button>
             <button
               type="button"
@@ -645,7 +665,7 @@ export const MondayDutyModal: React.FC<Props> = ({
         {/* Nội dung Form Cuộn */}
         <form onSubmit={(e) => handleFormSubmit(e)} className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-5 text-xs sm:text-sm">
           {/* PHẦN 1: TRỰC TUẦN (SÁNG & CHIỀU) */}
-          {(activeTab === 'all' || activeTab === 'weekDuty') && (
+          {(activeTab === 'all' || activeTab === 'weeklyDuty') && (
             <div className="border-2 border-indigo-500 bg-indigo-50/40 rounded-xs p-3.5 shadow-2xs">
               <div className="flex items-center justify-between pb-2 mb-3 border-b-2 border-indigo-400">
                 <div className="flex items-center gap-2 text-indigo-950 font-black text-xs sm:text-sm uppercase tracking-wide">
@@ -859,7 +879,7 @@ export const MondayDutyModal: React.FC<Props> = ({
           )}
 
           {/* PHẦN 3: CỔNG & SÂN KHẤU (SÁNG & CHIỀU) */}
-          {(activeTab === 'all' || activeTab === 'stage') && (
+          {(activeTab === 'all' || activeTab === 'weeklyDuty') && (
             <div className="border-2 border-amber-500 bg-amber-50/40 rounded-xs p-3.5 shadow-2xs">
               <div className="flex items-center justify-between pb-2 mb-3 border-b-2 border-amber-400">
                 <div className="flex items-center gap-2 text-amber-950 font-black text-xs sm:text-sm uppercase tracking-wide">

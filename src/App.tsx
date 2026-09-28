@@ -39,6 +39,8 @@ import {
 } from './data/defaultData';
 import { ScheduleGrid } from './components/ScheduleGrid';
 import { SHDCPanel } from './components/SHDCPanel';
+import { WeeklyDutySection } from './components/WeeklyDutySection';
+import { StairCleaningSection } from './components/StairCleaningSection';
 import { StudentListModal } from './components/StudentListModal';
 import { PrintPreview } from './components/PrintPreview';
 import { ExportPreviewModal } from './components/ExportPreviewModal';
@@ -46,7 +48,30 @@ import { MondayDutyModal } from './components/MondayDutyModal';
 import { exportToImage, exportToPDF } from './utils/exportUtils';
 import { MondayDutyClasses } from './types';
 
+export type ActiveAssignmentView = 'grid' | 'shdc' | 'weeklyDuty' | 'stairs' | 'all';
+
 export default function App() {
+  const [activeView, setActiveView] = useState<ActiveAssignmentView>(() => {
+    try {
+      const saved = localStorage.getItem('app_active_view');
+      if (saved && ['grid', 'shdc', 'weeklyDuty', 'stairs', 'all'].includes(saved)) {
+        return saved as ActiveAssignmentView;
+      }
+    } catch {
+      // fallback
+    }
+    return 'grid';
+  });
+
+  const handleSelectView = (view: ActiveAssignmentView) => {
+    setActiveView(view);
+    try {
+      localStorage.setItem('app_active_view', view);
+    } catch {
+      // ignore
+    }
+  };
+
   const [state, setState] = useState<AppState>(() => {
     const loaded = loadAppState();
     const realTime = getRealTimeInfo();
@@ -78,6 +103,13 @@ export default function App() {
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showMondayDutyModal, setShowMondayDutyModal] = useState(false);
+  const [dutyModalSection, setDutyModalSection] = useState<'weeklyDuty' | 'stairs' | 'all'>('weeklyDuty');
+
+  const handleOpenDutyModal = (section: 'weeklyDuty' | 'stairs' | 'all' = 'weeklyDuty') => {
+    setDutyModalSection(section);
+    setShowMondayDutyModal(true);
+  };
+
   const [isExporting, setIsExporting] = useState<'image' | 'pdf' | null>(null);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1324,45 +1356,199 @@ export default function App() {
         </div>
       </div>
 
-      {/* PHÂN CÔNG TRỰC SÁNG THỨ HAI (SHDC) RIÊNG CHO CÁC HỌC SINH */}
-      <div className="no-print w-[96%] max-w-[1800px] mx-auto">
-        <SHDCPanel
-          week={currentWeek}
-          students={state.students}
-          locations={state.shdcLocations}
-          onGenerateSHDC={handleGenerateSHDC}
-          onToggleStudentLock={handleToggleStudentLock}
-          onAddSHDCStudent={handleAddSHDCStudent}
-          onRemoveSHDCStudent={handleRemoveSHDCStudent}
-          onClearSHDC={handleClearSHDC}
-          onAddLocation={handleAddSHDCLocation}
-          onDeleteLocation={handleDeleteSHDCLocation}
-          onEditLocation={handleEditSHDCLocation}
-          onOpenMondayDutyModal={() => setShowMondayDutyModal(true)}
-          onToggleLockMondayDuty={handleToggleLockMondayDuty}
-          onApplyMondayDutyToNextWeek={handleApplyMondayDutyToNextWeek}
-        />
-      </div>
+      {/* THANH ĐIỀU HƯỚNG CÁC PHÂN HỆ NỘI DUNG PHÂN CÔNG (TÁCH BIỆT TRÁNH RỐI MẮT) */}
+      <div className="no-print w-[96%] max-w-[1800px] mx-auto mb-3">
+        <div className="bg-white p-2 sm:p-2.5 rounded-xs border-2 border-blue-900 shadow-xs flex flex-wrap items-center justify-between gap-2.5">
+          {/* Nhóm các nút bấm chức năng riêng biệt */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-black uppercase text-blue-950 px-2.5 py-1.5 bg-blue-100 rounded-xs border border-blue-300 flex items-center gap-1 shrink-0">
+              <span>📂</span> CHỨC NĂNG:
+            </span>
 
-      {/* BẢNG LỊCH CHÍNH (Hiển thị trực quan trên màn hình) */}
-      <div className="no-print w-[96%] max-w-[1800px] mx-auto">
-        <ScheduleGrid
-          week={currentWeek}
-          bchList={state.bchList}
-          students={state.students}
-          includeSaturday={Boolean(state.includeSaturday)}
-          onUpdateBCHSlot={handleUpdateBCHSlot}
-          onToggleLock={handleToggleLock}
-          onToggleStudentsLock={handleToggleStudentsLock}
-          onAddStudent={handleAddStudent}
-          onRemoveStudent={handleRemoveStudent}
-        />
+            {/* Nút 1: Lịch trực tuần (Thứ 2 - Thứ 6/7) */}
+            <button
+              type="button"
+              onClick={() => handleSelectView('grid')}
+              className={`px-3 py-1.5 rounded-xs text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeView === 'grid'
+                  ? 'bg-blue-900 text-white shadow-sm ring-2 ring-blue-500'
+                  : 'bg-slate-100 hover:bg-slate-200 text-gray-800 border border-gray-300'
+              }`}
+            >
+              <span>🗓️</span>
+              <span>1. Lịch trực tuần (Thứ 2 - {state.includeSaturday ? 'T7' : 'T6'})</span>
+            </button>
 
-        <div className="mt-3 text-xs sm:text-sm font-semibold text-gray-700 flex flex-wrap justify-between items-center bg-gray-50 p-2 border border-gray-300 rounded-xs">
-          <span>* Bấm vào ô để chọn học sinh hoặc BCH • Biểu tượng 🔒 để khóa ô học sinh hoặc BCH khi xếp lại • Khi xuất ảnh / PDF các khóa sẽ tự động ẩn đi</span>
-          <span className="font-bold text-gray-900">Đoàn trường THPT Nguyễn Chí Thanh</span>
+            {/* Nút 2: Trực SHDC Sáng Thứ Hai */}
+            <button
+              type="button"
+              onClick={() => handleSelectView('shdc')}
+              className={`px-3 py-1.5 rounded-xs text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeView === 'shdc'
+                  ? 'bg-sky-800 text-white shadow-sm ring-2 ring-sky-500'
+                  : 'bg-slate-100 hover:bg-slate-200 text-gray-800 border border-gray-300'
+              }`}
+            >
+              <span>🚩</span>
+              <span>2. Trực SHDC Sáng T2</span>
+              <span className="text-[10px] bg-sky-200 text-sky-950 px-1.5 py-0.2 rounded-full font-black">
+                {state.shdcLocations?.length || 8} khu vực
+              </span>
+            </button>
+
+            {/* Nút 3: Phân công trực theo tuần */}
+            <button
+              type="button"
+              onClick={() => handleSelectView('weeklyDuty')}
+              className={`px-3 py-1.5 rounded-xs text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeView === 'weeklyDuty'
+                  ? 'bg-indigo-800 text-white shadow-sm ring-2 ring-indigo-500'
+                  : 'bg-slate-100 hover:bg-slate-200 text-gray-800 border border-gray-300'
+              }`}
+            >
+              <span>🏛️</span>
+              <span>3. Phân công trực theo tuần</span>
+              {currentWeek.mondayDutyClasses?.isLocked && (
+                <span className="text-[10px] bg-amber-300 text-amber-950 px-1 py-0.2 rounded-2xs font-black">
+                  🔒
+                </span>
+              )}
+            </button>
+
+            {/* Nút 4: Vệ sinh cầu thang */}
+            <button
+              type="button"
+              onClick={() => handleSelectView('stairs')}
+              className={`px-3 py-1.5 rounded-xs text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeView === 'stairs'
+                  ? 'bg-teal-800 text-white shadow-sm ring-2 ring-teal-500'
+                  : 'bg-slate-100 hover:bg-slate-200 text-gray-800 border border-gray-300'
+              }`}
+            >
+              <span>🪜</span>
+              <span>4. Vệ sinh cầu thang</span>
+              {currentWeek.mondayDutyClasses?.isLocked && (
+                <span className="text-[10px] bg-amber-300 text-amber-950 px-1 py-0.2 rounded-2xs font-black">
+                  🔒
+                </span>
+              )}
+            </button>
+
+            {/* Nút 5: Xem toàn bộ */}
+            <button
+              type="button"
+              onClick={() => handleSelectView('all')}
+              className={`px-3 py-1.5 rounded-xs text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeView === 'all'
+                  ? 'bg-purple-900 text-white shadow-sm ring-2 ring-purple-500'
+                  : 'bg-slate-100 hover:bg-slate-200 text-gray-800 border border-gray-300'
+              }`}
+            >
+              <span>📋</span>
+              <span>Xem toàn bộ (Tổng hợp)</span>
+            </button>
+          </div>
+
+          {/* Nút xem nhanh bản in đầy đủ */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowExportModal(true)}
+              className="px-2.5 py-1.5 text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 rounded-xs flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+            >
+              <span>👁️</span>
+              <span>Xem trước bản in đầy đủ</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Thanh mô tả ngắn gọn phân hệ đang kích hoạt */}
+        <div className="mt-1.5 px-3 py-1.5 bg-blue-50/70 border border-blue-200 rounded-xs text-xs text-blue-900 flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="font-black text-blue-950">
+              {activeView === 'grid' && '🗓️ Đang làm việc với: BẢNG LỊCH TRỰC BAN NGÀY (THỨ 2 - ' + (state.includeSaturday ? 'THỨ 7' : 'THỨ 6') + ')'}
+              {activeView === 'shdc' && '🚩 Đang làm việc với: TRỰC SINH HOẠT DƯỚI CỜ (SHDC SÁNG THỨ HAI)'}
+              {activeView === 'weeklyDuty' && '🏛️ Đang làm việc với: PHÂN CÔNG TRỰC THEO TUẦN (CỔNG & SÂN KHẤU)'}
+              {activeView === 'stairs' && '🪜 Đang làm việc với: PHÂN CÔNG VỆ SINH CẦU THANG (KHU A, B, C1, D)'}
+              {activeView === 'all' && '📋 Đang xem: TOÀN BỘ TẤT CẢ CÁC PHÂN HỆ NỘI DUNG (TỔNG HỢP)'}
+            </span>
+          </div>
+          <span className="text-[11px] text-gray-600 italic">
+            * Bấm các nút chức năng ở trên để chuyển đổi nhanh giữa các nội dung phân công
+          </span>
         </div>
       </div>
+
+      {/* 1. KHU VỰC PHÂN CÔNG SHDC (HIỂN THỊ KHI CHỌN SHDC HOẶC XEM TOÀN BỘ) */}
+      {(activeView === 'shdc' || activeView === 'all') && (
+        <div className="no-print w-[96%] max-w-[1800px] mx-auto">
+          <SHDCPanel
+            week={currentWeek}
+            students={state.students}
+            locations={state.shdcLocations}
+            onGenerateSHDC={handleGenerateSHDC}
+            onToggleStudentLock={handleToggleStudentLock}
+            onAddSHDCStudent={handleAddSHDCStudent}
+            onRemoveSHDCStudent={handleRemoveSHDCStudent}
+            onClearSHDC={handleClearSHDC}
+            onAddLocation={handleAddSHDCLocation}
+            onDeleteLocation={handleDeleteSHDCLocation}
+            onEditLocation={handleEditSHDCLocation}
+            onOpenMondayDutyModal={() => handleOpenDutyModal('weeklyDuty')}
+            onToggleLockMondayDuty={handleToggleLockMondayDuty}
+            onApplyMondayDutyToNextWeek={handleApplyMondayDutyToNextWeek}
+            showOnlySHDC={activeView !== 'all'}
+          />
+        </div>
+      )}
+
+      {/* 2. KHU VỰC PHÂN CÔNG TRỰC THEO TUẦN (HIỂN THỊ KHI CHỌN PHÂN HỆ 3 HOẶC XEM TOÀN BỘ) */}
+      {(activeView === 'weeklyDuty' || activeView === 'all') && (
+        <div className="no-print w-[96%] max-w-[1800px] mx-auto">
+          <WeeklyDutySection
+            week={currentWeek}
+            weekNumber={state.currentWeekNumber}
+            onOpenModal={() => handleOpenDutyModal('weeklyDuty')}
+            onToggleLock={handleToggleLockMondayDuty}
+            onApplyToNextWeek={handleApplyMondayDutyToNextWeek}
+          />
+        </div>
+      )}
+
+      {/* 3. KHU VỰC PHÂN CÔNG VỆ SINH CẦU THANG (HIỂN THỊ KHI CHỌN PHÂN HỆ 4 HOẶC XEM TOÀN BỘ) */}
+      {(activeView === 'stairs' || activeView === 'all') && (
+        <div className="no-print w-[96%] max-w-[1800px] mx-auto">
+          <StairCleaningSection
+            week={currentWeek}
+            weekNumber={state.currentWeekNumber}
+            onOpenModal={() => handleOpenDutyModal('stairs')}
+            onToggleLock={handleToggleLockMondayDuty}
+            onApplyToNextWeek={handleApplyMondayDutyToNextWeek}
+          />
+        </div>
+      )}
+
+      {/* 4. BẢNG LỊCH CHÍNH (HIỂN THỊ KHI CHỌN LỊCH TRỰC NGÀY HOẶC XEM TOÀN BỘ) */}
+      {(activeView === 'grid' || activeView === 'all') && (
+        <div className="no-print w-[96%] max-w-[1800px] mx-auto">
+          <ScheduleGrid
+            week={currentWeek}
+            bchList={state.bchList}
+            students={state.students}
+            includeSaturday={Boolean(state.includeSaturday)}
+            onUpdateBCHSlot={handleUpdateBCHSlot}
+            onToggleLock={handleToggleLock}
+            onToggleStudentsLock={handleToggleStudentsLock}
+            onAddStudent={handleAddStudent}
+            onRemoveStudent={handleRemoveStudent}
+          />
+
+          <div className="mt-3 text-xs sm:text-sm font-semibold text-gray-700 flex flex-wrap justify-between items-center bg-gray-50 p-2 border border-gray-300 rounded-xs">
+            <span>* Bấm vào ô để chọn học sinh hoặc BCH • Biểu tượng 🔒 để khóa ô học sinh hoặc BCH khi xếp lại • Khi xuất ảnh / PDF các khóa sẽ tự động ẩn đi</span>
+            <span className="font-bold text-gray-900">Đoàn trường THPT Nguyễn Chí Thanh</span>
+          </div>
+        </div>
+      )}
 
       {/* KHU VỰC BẢN IN (Chỉ hiển thị khi in thực tế từ trình duyệt) */}
       <div className="hidden print:block">
@@ -1438,6 +1624,7 @@ export default function App() {
           dutyClasses={currentWeek.mondayDutyClasses}
           bchList={state.bchList}
           weekNumber={state.currentWeekNumber}
+          initialSection={dutyModalSection}
           onSave={handleSaveMondayDuty}
           onClose={() => setShowMondayDutyModal(false)}
         />
